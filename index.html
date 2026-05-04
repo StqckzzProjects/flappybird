@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>STQCKZZ BIRD | MULTIPLAYER</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div id="game-container">
+        <div id="nav-menu" class="overlay">
+            <h1 class="neon-text">STQCKZZ BIRD</h1>
+            <div class="menu-options">
+                <button class="nav-btn local" onclick="uiAction.enterLobby('local')">LOCAL PLAY</button>
+                <button class="nav-btn online" onclick="uiAction.enterLobby('online')">ONLINE ARENA</button>
+            </div>
+        </div>
+
+        <div id="lobby-menu" class="overlay" style="display:none;">
+            <h2 class="neon-header">SYSTEM LOBBY</h2>
+            
+            <div id="online-controls" class="network-bar" style="display:none;">
+                <input type="text" id="session-id" placeholder="ROOM CODE">
+                <select id="room-privacy">
+                    <option value="public">PUBLIC</option>
+                    <option value="private">PRIVATE</option>
+                </select>
+                <button class="net-btn host" onclick="netAction.host()">CREATE</button>
+                <div id="rooms-list-data"></div>
+            </div>
+
+            <div id="leaderboard-box">
+                <div class="lb-tabs">
+                    <button class="lb-tab active" onclick="uiAction.filterLB('classic', this)">CLASSIC</button>
+                    <button class="lb-tab" onclick="uiAction.filterLB('hardcore', this)">HARDCORE</button>
+                    <button class="lb-tab" onclick="uiAction.filterLB('zen', this)">ZEN</button>
+                </div>
+                <div id="leaderboard-data">SYNCING...</div>
+            </div>
+
+            <div class="lobby-grid" id="player-slots-container"></div>
+
+            <div class="settings-bar">
+                <select id="game-mode">
+                    <option value="classic">CLASSIC PROTOCOL</option>
+                    <option value="hardcore">HARDCORE (MOVING OBSTACLES)</option>
+                    <option value="zen">ZEN STATE</option>
+                </select>
+            </div>
+
+            <button class="initialize-btn" onclick="gameEngine.start()">INITIALIZE CORE</button>
+            <div class="terminate-session" onclick="location.reload()">TERMINATE</div>
+        </div>
+
+        <div id="die-menu" class="overlay" style="display:none;">
+            <h1 class="neon-header" style="color: #ff3131;">SYSTEM CRASH</h1>
+            <div id="results-list"></div>
+            <button class="initialize-btn" onclick="gameEngine.start()">REBOOT</button>
+            <button class="terminate-session" onclick="location.reload()">MENU</button>
+        </div>
+
+        <canvas id="birdCanvas" width="800" height="600" style="display:none;"></canvas>
+    </div>
+
+    <script src="/socket.io/socket.io.js?v=1.1"></script>
+    <script src="js/colors.js?v=1.1"></script>
+    <script src="js/mode.js?v=1.1"></script>
+    <script src="js/entities.js?v=1.1"></script>
+    <script src="js/lobby.js?v=1.1"></script>
+    <script src="js/network.js?v=1.1"></script>
+    <script src="js/game.js?v=1.1"></script>
+</body>
+</html>
