@@ -2,8 +2,9 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>STQCKZZ BIRD | MULTIPLAYER</title>
-    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/style.css?v=3.2">
 </head>
 <body>
     <div id="game-container">
@@ -19,22 +20,27 @@
             <h2 class="neon-header">SYSTEM LOBBY</h2>
             
             <div id="online-controls" class="network-bar" style="display:none;">
-                <input type="text" id="session-id" placeholder="ROOM CODE">
-                <select id="room-privacy">
-                    <option value="public">PUBLIC</option>
-                    <option value="private">PRIVATE</option>
-                </select>
-                <button class="net-btn host" onclick="netAction.host()">CREATE</button>
-                <div id="rooms-list-data"></div>
-            </div>
-
-            <div id="leaderboard-box">
-                <div class="lb-tabs">
-                    <button class="lb-tab active" onclick="uiAction.filterLB('classic', this)">CLASSIC</button>
-                    <button class="lb-tab" onclick="uiAction.filterLB('hardcore', this)">HARDCORE</button>
-                    <button class="lb-tab" onclick="uiAction.filterLB('zen', this)">ZEN</button>
+                <div class="host-section">
+                    <input type="text" id="session-id" placeholder="ROOM CODE">
+                    <select id="room-size">
+                        <option value="2">2 PLAYERS</option>
+                        <option value="4">4 PLAYERS</option>
+                        <option value="6">6 PLAYERS (MAX)</option>
+                    </select>
+                    <button class="net-btn host" onclick="netAction.host()">CREATE</button>
                 </div>
-                <div id="leaderboard-data">SYNCING...</div>
+                <select id="leaderboard-mode">
+                    <option value="all">ALL MODES</option>
+                    <option value="classic">CLASSIC</option>
+                    <option value="hardcore">HARDCORE</option>
+                  </select>
+                  <div id="leaderboard-list"></div>
+
+                <div class="rooms-container">
+                    <h3>ACTIVE CORES</h3>
+                    <div id="rooms-list-data"></div>
+                    <button class="net-btn join" onclick="netAction.join()">JOIN BY CODE</button>
+                </div>
             </div>
 
             <div class="lobby-grid" id="player-slots-container"></div>
@@ -42,13 +48,13 @@
             <div class="settings-bar">
                 <select id="game-mode">
                     <option value="classic">CLASSIC PROTOCOL</option>
-                    <option value="hardcore">HARDCORE (MOVING OBSTACLES)</option>
+                    <option value="hardcore">HARDCORE (MOVING)</option>
                     <option value="zen">ZEN STATE</option>
                 </select>
             </div>
 
-            <button class="initialize-btn" onclick="gameEngine.start()">INITIALIZE CORE</button>
-            <div class="terminate-session" onclick="location.reload()">TERMINATE</div>
+            <button class="initialize-btn" onclick="netAction.broadcastStart()">START SYSTEM</button>
+            <div class="terminate-session" onclick="location.reload()">ABORT</div>
         </div>
 
         <div id="die-menu" class="overlay" style="display:none;">
@@ -58,15 +64,16 @@
             <button class="terminate-session" onclick="location.reload()">MENU</button>
         </div>
 
-        <canvas id="birdCanvas" width="800" height="600" style="display:none;"></canvas>
+        <canvas id="birdCanvas" width="1000" height="700" style="display:none;"></canvas>
     </div>
 
-    <script src="/socket.io/socket.io.js?v=1.1"></script>
-    <script src="js/colors.js?v=1.1"></script>
-    <script src="js/mode.js?v=1.1"></script>
-    <script src="js/entities.js?v=1.1"></script>
-    <script src="js/lobby.js?v=1.1"></script>
-    <script src="js/network.js?v=1.1"></script>
-    <script src="js/game.js?v=1.1"></script>
+    <script src="/socket.io/socket.io.js?v=3.2"></script>
+    <script src="js/colors.js?v=3.2"></script>
+    <script src="js/mode.js?v=3.2"></script>
+    <script src="js/entities.js?v=3.2"></script>
+    <script src="js/game.js?v=3.2"></script>
+    <script src="js/lobby.js?v=3.2"></script>
+    <script src="js/network.js?v=3.2"></script>
+    <script src="js/leaderboard.js?v=3.2"></script>
 </body>
 </html>
