@@ -1,5 +1,17 @@
 const socket = typeof io !== 'undefined' ? io() : { emit: () => {}, on: () => {}, connected: false, id: 'local' };
 
+function rebootGame() {
+  const isHost = activeConfigs.length > 0 && activeConfigs[0].id === socket.id;
+
+  if (socket.connected) {
+    if (isHost) {
+      netAction.broadcastStart();
+    }
+  } else {
+    gameEngine.start();
+  }
+}
+
 const netAction = {
   host: () => {
     const id = Math.random().toString(36).substring(2, 7).toUpperCase();
@@ -16,17 +28,25 @@ const netAction = {
 
   broadcastStart: () => {
     const sessionId = (document.getElementById('session-id').value || '').trim().toUpperCase();
-    if (sessionId && socket.connected) {
+
+    // only host (first player) can start
+    const isHost = activeConfigs.length > 0 && activeConfigs[0].id === socket.id;
+  
+    if (sessionId && socket.connected && isHost) {
       socket.emit('requestStart', sessionId);
-    } else {
-      gameEngine.start();
     }
   }
 };
+socket.on && socket.on('gameResults', (data) => {
+  if (!data || !Array.isArray(data.players)) return;
 
+  // store globally so game.js can use it
+  window.finalResults = data.players;
+});
 socket.on && socket.on('roomJoined', (data) => {
   maxRoomSize = data.maxPlayers || 4;
   document.getElementById('session-id').value = data.sessionId;
+  window.isHost = data.isHost === true;
 
   const me = activeConfigs.find(p => p.id === socket.id);
   if (!me) uiAction.addPlayer(true);
@@ -88,21 +108,51 @@ socket.on && socket.on('playerLeftRoom', (data) => {
 });
 
 socket.on && socket.on('gameUpdate', (data) => {
-  if (!gameRunning || !data || !Array.isArray(data.players)) return;
-  data.players.forEach(remote => {
-    const p = players.find(x => x.id === remote.id);
-    if (p && p.id !== socket.id) {
+  if (!gameRunning || !data) return;
+
+  // update players
+  if (Array.isArray(data.players)) {
+    data.players.forEach(remote => {
+      let p = players.find(x => x.id === remote.id);
+
+      if (!p) {
+        // create if missing
+        p = new window.Bird(remote);
+        players.push(p);
+      }
+
       p.x = remote.x;
       p.y = remote.y;
       p.isDead = remote.isDead;
-    }
-  });
-});
+      p.distance = remote.distance || 0;
+      p.color = remote.color;
+      p.name = remote.name;
+    });
+  }
+
+  // update pipes
+  if (Array.isArray(data.pipes) && data.pipes.length) {
+    pipes = data.pipes.map(pipeData => {
+      const pipe = new window.Pipe(ModeHandler.getCurrent(), canvas.width, canvas.height);
+      pipe.x = pipeData.x;
+      pipe.topHeight = pipeData.topHeight;
+      return pipe;
+    });
+  }
+  }); // ✅ <-- THIS WAS MISSING
 
 socket.on && socket.on('startGameNow', () => {
+  window.finalResults = [];
   gameEngine.start();
 });
-
 socket.on && socket.on('errorMsg', (msg) => {
   alert(msg);
+});
+socket.on && socket.on('flap', (data) => {
+  if (!window.isHost) return;
+
+  const p = players.find(x => x.id === data.id);
+  if (p && !p.isDead) {
+    p.flap();
+  }
 });

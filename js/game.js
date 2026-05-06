@@ -1,15 +1,14 @@
 const canvas = document.getElementById('birdCanvas');
 const ctx = canvas.getContext('2d');
 let players = [], pipes = [], gameRunning = false, frameCount = 0;
-
 const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
 
 const gameEngine = {
   start: () => {
+    window.finalResults = [];
     document.getElementById('lobby-menu').style.display = 'none';
     document.getElementById('die-menu').style.display = 'none';
     canvas.style.display = 'block';
-
     pipes = [];
     players = activeConfigs.map(c => new window.Bird(c));
 
@@ -25,9 +24,11 @@ const gameEngine = {
     announcer.innerHTML = `<span style="color:${color}">${name}</span> CRASHED`;
     document.getElementById('game-container').appendChild(announcer);
     setTimeout(() => announcer.remove(), 2000);
+    window.finalResults = [];
   },
 
   loop: () => {
+    
     if (!gameRunning) return;
 
     ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -44,38 +45,61 @@ const gameEngine = {
     });
 
     players.forEach(p => {
-      const isLocal = p.id === socket.id || p.isLocal;
-      if (!p.isDead && isLocal) {
-        p.update(canvas.height);
-        pipes.forEach(pipe => {
-          if (p.x + p.radius > pipe.x && p.x - p.radius < pipe.x + pipe.width) {
-            if (p.y - p.radius < pipe.topHeight || p.y + p.radius > pipe.topHeight + pipe.spacing) {
-              if (!p.isDead) {
-                p.isDead = true;
-                gameEngine.announceDeath(p.name, p.color);
+      if (window.isHost) {
+        // ONLY host runs physics
+        if (!p.isDead) {
+          p.update(canvas.height);
+    
+          pipes.forEach(pipe => {
+            if (p.x + p.radius > pipe.x && p.x - p.radius < pipe.x + pipe.width) {
+              if (p.y - p.radius < pipe.topHeight || p.y + p.radius > pipe.topHeight + pipe.spacing) {
+                if (!p.isDead) {
+                  p.isDead = true;
+                  gameEngine.announceDeath(p.name, p.color);
+                }
               }
             }
-          }
-        });
+          });
+        }
       }
+    
+      // ✅ EVERYONE draws
       p.draw(ctx);
     });
 
-    if (socket.connected) {
+    if (socket.connected && window.isHost) {
       const sessionId = (document.getElementById('session-id').value || '').trim().toUpperCase();
-      const myBirds = players.filter(p => p.id === socket.id);
-      if (myBirds.length > 0 && sessionId) {
-        socket.emit('syncGame', {
-          sessionId,
-          players: myBirds.map(b => ({
-            id: b.id, x: b.x, y: b.y, isDead: b.isDead
-          }))
-        });
-      }
+    
+      socket.emit('syncGame', {
+        sessionId,
+        players: players.map(p => ({
+          id: p.id,
+          x: p.x,
+          y: p.y,
+          isDead: p.isDead,
+          distance: p.distance,
+          color: p.color,
+          name: p.name
+        })),
+        pipes: pipes.map(pipe => ({
+          x: pipe.x,
+          topHeight: pipe.topHeight
+        }))
+      });
     }
 
     if (players.length > 0 && players.every(p => p.isDead)) {
       gameRunning = false;
+    
+      if (socket.connected) {
+        const sessionId = (document.getElementById('session-id').value || '').trim().toUpperCase();
+    
+        socket.emit('gameOver', {
+          sessionId,
+          players
+        });
+      }
+    
       setTimeout(() => gameEngine.over(), 1000);
       return;
     }
@@ -86,14 +110,24 @@ const gameEngine = {
   over: () => {
     canvas.style.display = 'none';
     document.getElementById('die-menu').style.display = 'flex';
-
+  
     const currentModeKey = document.getElementById('game-mode').value;
-
-    document.getElementById('results-list').innerHTML = players.map(p => {
-      const finalScore = Math.floor(p.distance / 10);
+  
+    const list = (window.finalResults && window.finalResults.length)
+      ? window.finalResults
+      : players;
+  
+    document.getElementById('results-list').innerHTML = list.map(p => {
+      const finalScore = Math.floor((p.distance || 0) / 10);
+  
       if (socket.connected && p.id === socket.id) {
-        socket.emit('submitScore', { name: p.name, score: finalScore, mode: currentModeKey });
+        socket.emit('submitScore', {
+          name: p.name,
+          score: finalScore,
+          mode: currentModeKey
+        });
       }
+  
       return `<div style="color:${p.color}; font-family:monospace; margin-bottom:5px;">
         ${p.name}: ${finalScore}m
       </div>`;
@@ -106,7 +140,18 @@ window.addEventListener('keydown', e => {
   if (!gameRunning) return;
   players.forEach(p => {
     const isLocal = p.id === socket.id || p.isLocal;
-    if (isLocal && e.keyCode === p.key) p.flap();
+    if (isLocal && e.keyCode === p.key) {
+      if (window.isHost) {
+        p.flap();
+      } else {
+        const sessionId = (document.getElementById('session-id').value || '').trim().toUpperCase();
+
+socket.emit('flap', {
+  id: socket.id,
+  sessionId
+});
+      }
+    }
   });
 });
 

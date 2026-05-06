@@ -21,7 +21,22 @@ let activeRooms = []; // { id, privacy, playerCount, maxPlayers, hostId }
 
 io.on('connection', (socket) => {
   console.log(`Connection established: ${socket.id}`);
-
+  socket.on('gameOver', (data) => {
+    if (!data || !data.sessionId || !Array.isArray(data.players)) return;
+  
+    io.to(data.sessionId).emit('gameResults', {
+      players: data.players
+    });
+  });
+  socket.on('flap', (data) => {
+    socket.to(data.sessionId).emit('flap', data);
+  });
+  socket.on('flap', (data) => {
+    if (!data || !data.id) return;
+  
+    // send flap to everyone else in the room
+    socket.to(data.sessionId).emit('flap', data);
+  });
   // Initial data push
   socket.emit('updateLeaderboard', globalLeaderboard);
   socket.emit('publicRooms', activeRooms.filter(r => r.privacy === 'public'));
@@ -136,6 +151,7 @@ io.on('connection', (socket) => {
     console.log(`Connection terminated: ${socket.id}`);
   });
 });
+
 
 server.listen(PORT, () => {
   console.log(`STQCKZZ BIRD SERVER RUNNING ON PORT ${PORT}`);
