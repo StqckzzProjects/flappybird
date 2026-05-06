@@ -62,7 +62,13 @@ const gameEngine = {
           });
         }
       }
-    
+    // smooth movement for non-host
+if (!window.isHost) {
+  if (p.targetX !== undefined) {
+    p.x += (p.targetX - p.x) * 0.2;
+    p.y += (p.targetY - p.y) * 0.2;
+  }
+}
       // ✅ EVERYONE draws
       p.draw(ctx);
     });
@@ -158,8 +164,21 @@ socket.emit('flap', {
 window.addEventListener('touchstart', (e) => {
   if (!gameRunning) return;
   e.preventDefault();
+
   players.forEach(p => {
     const isLocal = p.id === socket.id || p.isLocal;
-    if (isLocal) p.flap();
+
+    if (isLocal) {
+      if (window.isHost) {
+        p.flap();
+      } else {
+        const sessionId = (document.getElementById('session-id').value || '').trim().toUpperCase();
+
+        socket.emit('flap', {
+          id: socket.id,
+          sessionId
+        });
+      }
+    }
   });
 }, { passive: false });

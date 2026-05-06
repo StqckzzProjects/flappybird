@@ -121,8 +121,8 @@ socket.on && socket.on('gameUpdate', (data) => {
         players.push(p);
       }
 
-      p.x = remote.x;
-      p.y = remote.y;
+      p.targetX = remote.x;
+      p.targetY = remote.y;
       p.isDead = remote.isDead;
       p.distance = remote.distance || 0;
       p.color = remote.color;
@@ -130,15 +130,29 @@ socket.on && socket.on('gameUpdate', (data) => {
     });
   }
 
-  // update pipes
-  if (Array.isArray(data.pipes) && data.pipes.length) {
+  // update pipes (SMOOTH)
+if (Array.isArray(data.pipes) && data.pipes.length) {
+
+  if (!pipes.length) {
+    // first sync → create pipes
     pipes = data.pipes.map(pipeData => {
       const pipe = new window.Pipe(ModeHandler.getCurrent(), canvas.width, canvas.height);
       pipe.x = pipeData.x;
       pipe.topHeight = pipeData.topHeight;
       return pipe;
     });
+
+  } else {
+    // smooth updates instead of replacing
+    data.pipes.forEach((pipeData, i) => {
+      if (!pipes[i]) return;
+
+      pipes[i].x += (pipeData.x - pipes[i].x) * 0.2;
+      pipes[i].topHeight = pipeData.topHeight;
+    });
   }
+
+}
   }); // ✅ <-- THIS WAS MISSING
 
 socket.on && socket.on('startGameNow', () => {
