@@ -125,13 +125,11 @@ socket.on && socket.on('playerLeftRoom', (data) => {
 socket.on('gameUpdate', (data) => {
   if (!gameRunning || !data) return;
 
-  // 👇 ADDED PLAYER SYNC HERE 👇
+  // 1. SYNC PLAYERS (Fixes the "bird stuck" and "laggy bird" issue)
   if (Array.isArray(data.players)) {
     data.players.forEach(serverPlayer => {
-      // Find the matching player in our local game loop
       const localPlayer = players.find(p => p.id === serverPlayer.id);
       if (localPlayer) {
-        // Feed the coordinates to the interpolation engine
         localPlayer.targetX = serverPlayer.x;
         localPlayer.targetY = serverPlayer.y;
         localPlayer.isDead = serverPlayer.isDead;
@@ -139,27 +137,15 @@ socket.on('gameUpdate', (data) => {
       }
     });
   }
-  // 👆 --------------------------- 👆
 
-  // sync real pipes from host (FIX FOR DESYNC + LAG)
+  // 2. SYNC PIPES (Fixes missing/stuck obstacles)
   if (Array.isArray(data.pipes)) {
-    // create missing pipes
     while (pipes.length < data.pipes.length) {
-      pipes.push(
-        new window.Pipe(
-          ModeHandler.getCurrent(),
-          canvas.width,
-          canvas.height
-        )
-      );
+      pipes.push(new window.Pipe(ModeHandler.getCurrent(), canvas.width, canvas.height));
     }
-
-    // remove extra pipes
     while (pipes.length > data.pipes.length) {
       pipes.pop();
     }
-
-    // sync pipe state exactly from host
     data.pipes.forEach((pipeData, i) => {
       if (!pipes[i]) return;
       pipes[i].x = pipeData.x;

@@ -84,15 +84,16 @@ if (!window.isHost && players.length === 0) {
     // smooth movement for non-host
 // NON-HOST smooth interpolation (FIXED)
 if (!window.isHost && p.targetX != null && p.targetY != null) {
-  p.x += (p.targetX - p.x) * 0.35;
-  p.y += (p.targetY - p.y) * 0.35;
+  p.x += (p.targetX - p.x) * 0.45;
+  p.y += (p.targetY - p.y) * 0.45;
 }
       // ✅ EVERYONE draws
       if (!window.isHost && (p.x == null || p.y == null)) return;
       p.draw(ctx);
     });
 
-    if (socket.connected && window.isHost) {
+    // 🔥 PERFORMANCE FIX: Only sync every 2nd frame to prevent lag spikes
+    if (socket.connected && window.isHost && frameCount % 2 === 0) {
       const sessionId = (document.getElementById('session-id').value || '').trim().toUpperCase();
     
       socket.emit('syncGame', {
@@ -106,14 +107,13 @@ if (!window.isHost && p.targetX != null && p.targetY != null) {
           color: p.color,
           name: p.name
         })),
-        // 👇 ADD THIS ENTIRE PIPES ARRAY 👇
+        // 👇 ADD PIPES BACK IN (Critical for non-host movement)
         pipes: pipes.map(pipe => ({
           x: pipe.x,
           topHeight: pipe.topHeight,
           width: pipe.width,
           spacing: pipe.spacing
         }))
-        // 👆 ---------------------------- 👆
       });
     }
 
