@@ -43,6 +43,13 @@
   },
   {
     "name": "PLAYER 1",
+    "score": 11,
+    "mode": "classic",
+    "color": "#00d2ff",
+    "time": 1778175754700
+  },
+  {
+    "name": "PLAYER 1",
     "score": 10,
     "mode": "classic",
     "color": "#00d2ff",

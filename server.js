@@ -38,14 +38,12 @@ io.on('connection', (socket) => {
     });
   });
   socket.on('flap', (data) => {
-    socket.to(data.sessionId).emit('flap', data);
-  });
-  socket.on('flap', (data) => {
-    if (!data || !data.id) return;
-
-    // send flap to everyone else in the room
-    socket.to(data.sessionId).emit('flap', data);
-  });
+  if (!data || !data.sessionId) return;
+  socket.to(data.sessionId).emit('flap', {
+    id: data.id,
+    sessionId: data.sessionId
+  });
+});
   // Initial data push
   socket.emit('updateLeaderboard', globalLeaderboard);
   socket.emit('publicRooms', activeRooms.filter(r => r.privacy === 'public'));
@@ -149,12 +147,13 @@ io.on('connection', (socket) => {
   const set = io.sockets.adapter.rooms.get(id);
   room.playerCount = set ? set.size : 1;
 
-  socket.emit('roomJoined', {
-    sessionId: id,
-    maxPlayers: room.maxPlayers,
-    isHost: true,
-    existingPlayers: []
-  });
+socket.emit('roomJoined', {
+  sessionId: id,
+  maxPlayers: room ? room.maxPlayers : maxPlayers,
+  isHost: true,
+  hostId: room ? room.hostId : socket.id,
+  existingPlayers: []
+});
 
   // IMPORTANT: broadcast updated room list AFTER state is correct
   io.emit('publicRooms', activeRooms.filter(r => r.privacy === 'public'));
@@ -203,9 +202,20 @@ io.on('connection', (socket) => {
 
   // ---- START ----
   socket.on('requestStart', (sessionId) => {
-    if (!sessionId) return;
-    io.to(String(sessionId).toUpperCase()).emit('startGameNow');
-  });
+  if (!sessionId) return;
+
+  const id = String(sessionId).toUpperCase();
+  const room = activeRooms.find(r => r.id === id);
+
+  if (!room) return;
+
+  // ONLY ALLOW START FROM HOST (but safer check)
+  const isHost = room.hostId === socket.id;
+
+  if (!isHost) return;
+
+  io.to(id).emit('startGameNow');
+});
 
   // ---- GAME SYNC ----
   socket.on('syncGame', (data) => {
@@ -216,20 +226,30 @@ io.on('connection', (socket) => {
 });
 
   // ---- DISCONNECT ----
-  socket.on('disconnect', () => {
-    for (let i = activeRooms.length - 1; i >= 0; i--) {
-      const room = activeRooms[i];
-      const set = io.sockets.adapter.rooms.get(room.id);
-      if (!set || set.size === 0) {
-        activeRooms.splice(i, 1);
-      } else {
-        room.playerCount = set.size;
-        io.to(room.id).emit('playerLeftRoom', { id: socket.id });
-      }
-    }
-    io.emit('publicRooms', activeRooms.filter(r => r.privacy === 'public'));
-    console.log(`Connection terminated: ${socket.id}`);
-  });
+socket.on('disconnect', () => {
+  for (let i = activeRooms.length - 1; i >= 0; i--) {
+    const room = activeRooms[i];
+    const set = io.sockets.adapter.rooms.get(room.id);
+
+    if (!set || set.size === 0) {
+      activeRooms.splice(i, 1);
+      continue;
+    }
+
+    room.playerCount = set.size;
+
+    // if host left → assign new host
+    if (room.hostId === socket.id) {
+      const remaining = Array.from(set);
+      room.hostId = remaining.length > 0 ? remaining[0] : null;
+    }
+
+    io.to(room.id).emit('playerLeftRoom', { id: socket.id });
+  }
+
+  io.emit('publicRooms', activeRooms.filter(r => r.privacy === 'public'));
+  console.log(`Connection terminated: ${socket.id}`);
+});
 });
 
 

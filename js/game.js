@@ -4,18 +4,6 @@ let players = [], pipes = [], gameRunning = false, frameCount = 0;
 const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
 let lastSync = 0;
 const now = Date.now();
-if (now - lastSync > 33) { // ~30fps cap
-  socket.emit('syncGame', {
-    sessionId,
-    players: myBirds.map(b => ({
-      id: b.id,
-      x: b.x,
-      y: b.y,
-      isDead: b.isDead
-    }))
-  });
-  lastSync = now;
-}
 const gameEngine = {
   start: () => {
     window.finalResults = [];

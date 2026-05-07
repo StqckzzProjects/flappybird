@@ -61,7 +61,7 @@ socket.on && socket.on('gameResults', (data) => {
 socket.on && socket.on('roomJoined', (data) => {
   maxRoomSize = data.maxPlayers || 4;
   document.getElementById('session-id').value = data.sessionId;
-  window.isHost = data.isHost === true;
+  window.isHost = (data.hostId === socket.id);
 
   const me = activeConfigs.find(p => p.id === socket.id);
   if (!me) uiAction.addPlayer(true);
@@ -185,7 +185,16 @@ socket.on && socket.on('errorMsg', (msg) => {
 socket.on && socket.on('flap', (data) => {
   if (!window.isHost) return;
 socket.on && socket.on('publicRooms', (rooms) => {
-  renderPublicRooms(rooms);
+  const active = document.getElementById('rooms-list-data');
+  if (!active) return;
+
+  active.innerHTML = rooms.map(r => `
+    <div class="active-room">
+      <strong>${r.id}</strong>
+      <span>${r.playerCount || 1}/${r.maxPlayers}</span>
+      <em>${r.privacy}</em>
+    </div>
+  `).join('');
 });
   const p = players.find(x => x.id === data.id);
   if (p && !p.isDead) {
