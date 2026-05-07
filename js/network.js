@@ -122,30 +122,10 @@ socket.on && socket.on('playerLeftRoom', (data) => {
   }
 });
 
-socket.on && socket.on('gameUpdate', (data) => {
-  if (!gameRunning || !data) return;
+socket.on('gameUpdate', (data) => {
+  if (!gameRunning || !data) return;
 
-  // update players
-  if (Array.isArray(data.players)) {
-    data.players.forEach(remote => {
-      let p = players.find(x => x.id === remote.id);
-
-      if (!p) {
-        // create if missing
-        p = new window.Bird(remote);
-        players.push(p);
-      }
-
-      p.targetX = remote.x;
-      p.targetY = remote.y;
-      p.isDead = remote.isDead;
-      p.distance = remote.distance || 0;
-      p.color = remote.color;
-      p.name = remote.name;
-    });
-  }
-
-// sync real pipes from host
+  // sync real pipes from host (FIX FOR DESYNC + LAG)
 if (Array.isArray(data.pipes)) {
 
   // create missing pipes
@@ -164,16 +144,17 @@ if (Array.isArray(data.pipes)) {
     pipes.pop();
   }
 
-  // sync pipe data
+  // sync pipe state exactly from host
   data.pipes.forEach((pipeData, i) => {
+    if (!pipes[i]) return;
+
     pipes[i].x = pipeData.x;
     pipes[i].topHeight = pipeData.topHeight;
     pipes[i].width = pipeData.width;
     pipes[i].spacing = pipeData.spacing;
   });
-
 }
-  }); // ✅ <-- THIS WAS MISSING
+});
 
 socket.on && socket.on('startGameNow', () => {
   window.finalResults = [];

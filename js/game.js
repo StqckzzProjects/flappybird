@@ -79,10 +79,10 @@ const gameEngine = {
       }
     // smooth movement for non-host
 if (!window.isHost) {
-  if (p.targetX !== undefined) {
-    p.x += (p.targetX - p.x) * 0.45;
-    p.y += (p.targetY - p.y) * 0.45;
-  }
+  if (!window.isHost && p.targetX !== undefined) {
+  p.x += (p.targetX - p.x) * 0.25;
+  p.y += (p.targetY - p.y) * 0.25;
+}
 }
       // ✅ EVERYONE draws
       p.draw(ctx);
@@ -92,23 +92,17 @@ if (!window.isHost) {
       const sessionId = (document.getElementById('session-id').value || '').trim().toUpperCase();
     
       socket.emit('syncGame', {
-        sessionId,
-        players: players.map(p => ({
-          id: p.id,
-          x: p.x,
-          y: p.y,
-          isDead: p.isDead,
-          distance: p.distance,
-          color: p.color,
-          name: p.name
-        })),
-        pipes: pipes.map(pipe => ({
-  x: pipe.x,
-  topHeight: pipe.topHeight,
-  width: pipe.width,
-  spacing: pipe.spacing
-}))
-      });
+  sessionId,
+  players: players.map(p => ({
+    id: p.id,
+    x: p.x,
+    y: p.y,
+    isDead: p.isDead,
+    distance: p.distance,
+    color: p.color,
+    name: p.name
+  }))
+});
     }
 
     if (players.length > 0 && players.every(p => p.isDead)) {
