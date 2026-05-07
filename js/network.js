@@ -18,7 +18,14 @@ const netAction = {
     const sizeEl = document.getElementById('room-size');
     const max = sizeEl ? parseInt(sizeEl.value, 10) || 4 : 4;
     document.getElementById('session-id').value = id;
-    socket.emit('createRoom', { id, maxPlayers: max, privacy: 'public' });
+    const privacy =
+  document.getElementById('room-privacy')?.value || 'public';
+
+socket.emit('createRoom', {
+  id,
+  maxPlayers: max,
+  privacy
+});
   },
 
   join: () => {
@@ -26,16 +33,24 @@ const netAction = {
     if (id) socket.emit('joinSession', id);
   },
 
-  broadcastStart: () => {
-    const sessionId = (document.getElementById('session-id').value || '').trim().toUpperCase();
+ broadcastStart: () => {
 
-    // only host (first player) can start
-    const isHost = activeConfigs.length > 0 && activeConfigs[0].id === socket.id;
-  
-    if (sessionId && socket.connected && isHost) {
-      socket.emit('requestStart', sessionId);
-    }
+  // LOCAL GAME
+  if (!socket.connected || window.isHost && !document.getElementById('session-id').value) {
+    window.finalResults = [];
+    gameEngine.start();
+    return;
   }
+
+  // ONLINE GAME
+  const sessionId = (document.getElementById('session-id').value || '').trim().toUpperCase();
+
+  const isHost = activeConfigs.length > 0 && activeConfigs[0].id === socket.id;
+
+  if (sessionId && socket.connected && isHost) {
+    socket.emit('requestStart', sessionId);
+  }
+}
 };
 socket.on && socket.on('gameResults', (data) => {
   if (!data || !Array.isArray(data.players)) return;
@@ -130,27 +145,32 @@ socket.on && socket.on('gameUpdate', (data) => {
     });
   }
 
-  // update pipes (SMOOTH)
-if (Array.isArray(data.pipes) && data.pipes.length) {
+// sync real pipes from host
+if (Array.isArray(data.pipes)) {
 
-  if (!pipes.length) {
-    // first sync → create pipes
-    pipes = data.pipes.map(pipeData => {
-      const pipe = new window.Pipe(ModeHandler.getCurrent(), canvas.width, canvas.height);
-      pipe.x = pipeData.x;
-      pipe.topHeight = pipeData.topHeight;
-      return pipe;
-    });
-
-  } else {
-    // smooth updates instead of replacing
-    data.pipes.forEach((pipeData, i) => {
-      if (!pipes[i]) return;
-
-      pipes[i].x += (pipeData.x - pipes[i].x) * 0.2;
-      pipes[i].topHeight = pipeData.topHeight;
-    });
+  // create missing pipes
+  while (pipes.length < data.pipes.length) {
+    pipes.push(
+      new window.Pipe(
+        ModeHandler.getCurrent(),
+        canvas.width,
+        canvas.height
+      )
+    );
   }
+
+  // remove extra pipes
+  while (pipes.length > data.pipes.length) {
+    pipes.pop();
+  }
+
+  // sync pipe data
+  data.pipes.forEach((pipeData, i) => {
+    pipes[i].x = pipeData.x;
+    pipes[i].topHeight = pipeData.topHeight;
+    pipes[i].width = pipeData.width;
+    pipes[i].spacing = pipeData.spacing;
+  });
 
 }
   }); // ✅ <-- THIS WAS MISSING
@@ -164,9 +184,52 @@ socket.on && socket.on('errorMsg', (msg) => {
 });
 socket.on && socket.on('flap', (data) => {
   if (!window.isHost) return;
-
+socket.on && socket.on('publicRooms', (rooms) => {
+  renderPublicRooms(rooms);
+});
   const p = players.find(x => x.id === data.id);
   if (p && !p.isDead) {
     p.flap();
   }
+  
 });
+function renderPublicRooms(rooms) {
+
+  const container = document.getElementById('public-rooms-list');
+
+  if (!container) return;
+
+  if (!rooms || !rooms.length) {
+    container.innerHTML = '<div>No public rooms</div>';
+    return;
+  }
+
+  container.innerHTML = rooms.map(room => `
+    <div class="public-room-card">
+      
+      <div>
+        <strong>${room.id}</strong>
+      </div>
+
+      <div>
+        ${room.playerCount}/${room.maxPlayers} PLAYERS
+      </div>
+
+      <div>
+        ${room.privacy.toUpperCase()}
+      </div>
+
+      <button onclick="joinPublicRoom('${room.id}')">
+        JOIN
+      </button>
+
+    </div>
+  `).join('');
+}
+function joinPublicRoom(roomId) {
+
+  document.getElementById('session-id').value = roomId;
+
+  netAction.join();
+
+}

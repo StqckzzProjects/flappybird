@@ -9,12 +9,40 @@ function renderLeaderboard() {
     ? __leaderboardCache
     : __leaderboardCache.filter(e => e.mode === mode)
   ).slice(0, 20);
-  ul.innerHTML = filtered.map((e, i) =>
-    `<li><span>#${i+1}</span> <span>${e.name}</span> <span>${e.score}</span> <span class="mode-tag">${e.mode}</span></li>`
-  ).join('') || '<li>No scores yet</li>';
+  ul.innerHTML = filtered.map((e, i) => {
+
+  let rankClass = '';
+
+  if (i === 0) rankClass = 'gold';
+  else if (i === 1) rankClass = 'silver';
+  else if (i === 2) rankClass = 'bronze';
+
+  return `
+    <li>
+
+      <span class="lb-rank ${rankClass}">
+        #${i + 1}
+      </span>
+
+      <span class="lb-name"
+        style="color:${e.color || '#ffffff'}">
+        ${e.name}
+      </span>
+
+      <span class="lb-score">
+        ${e.score}
+      </span>
+
+      <span class="mode-tag">
+        ${e.mode}
+      </span>
+
+    </li>
+  `;
+}).join('') || '<li>No scores yet</li>';
 }
 
-socket.on('leaderboard-update', (lb) => {
+socket.on('updateLeaderboard', (lb) => {
   __leaderboardCache = lb || [];
   renderLeaderboard();
 });

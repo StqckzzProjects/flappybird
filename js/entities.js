@@ -45,8 +45,8 @@ window.Pipe = class {
     }
   }
   draw(ctx, h) {
-    ctx.fillStyle = "#1a1a1e";
-    ctx.strokeStyle = "#444";
+    ctx.fillStyle = "#26c22b";
+    ctx.strokeStyle = "#444444";
     ctx.lineWidth = 2;
     ctx.fillRect(this.x, 0, this.width, this.topHeight);
     ctx.strokeRect(this.x, 0, this.width, this.topHeight);

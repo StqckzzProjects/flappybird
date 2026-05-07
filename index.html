@@ -20,6 +20,11 @@
             <h2 class="neon-header">SYSTEM LOBBY</h2>
             
             <div id="online-controls" class="network-bar" style="display:none;">
+                <div id="public-rooms-container">
+  <h3>PUBLIC ROOMS</h3>
+
+  <div id="public-rooms-list"></div>
+</div>
                 <div class="host-section">
                     <input type="text" id="session-id" placeholder="ROOM CODE">
                     <select id="room-size">
@@ -35,10 +40,16 @@
                     <option value="hardcore">HARDCORE</option>
                   </select>
                   <div id="leaderboard-list"></div>
-
+<button id="add-local-player-btn" onclick="uiAction.addPlayer(true)">
+  ADD PLAYER
+</button>
                 <div class="rooms-container">
                     <h3>ACTIVE CORES</h3>
                     <div id="rooms-list-data"></div>
+                    <select id="room-privacy">
+  <option value="public">PUBLIC</option>
+  <option value="private">PRIVATE</option>
+</select>
                     <button class="net-btn join" onclick="netAction.join()">JOIN BY CODE</button>
                 </div>
             </div>

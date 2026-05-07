@@ -34,15 +34,27 @@ const gameEngine = {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     const m = ModeHandler.getCurrent();
 
-    if (frameCount++ % m.spawn === 0) {
-      pipes.push(new window.Pipe(m, canvas.width, canvas.height));
-    }
+  if (window.isHost) {
+  if (frameCount++ % m.spawn === 0) {
+    pipes.push(new window.Pipe(m, canvas.width, canvas.height));
+  }
+}
 
     pipes.forEach((p, i) => {
-      p.update(canvas.height);
-      p.draw(ctx, canvas.height);
-      if (p.x < -100) pipes.splice(i, 1);
-    });
+
+  // ONLY host updates pipes
+  if (window.isHost) {
+    p.update(canvas.height);
+
+    if (p.x < -100) {
+      pipes.splice(i, 1);
+    }
+  }
+
+  // EVERYONE draws pipes
+  p.draw(ctx, canvas.height);
+
+});
 
     players.forEach(p => {
       if (window.isHost) {
@@ -65,8 +77,8 @@ const gameEngine = {
     // smooth movement for non-host
 if (!window.isHost) {
   if (p.targetX !== undefined) {
-    p.x += (p.targetX - p.x) * 0.2;
-    p.y += (p.targetY - p.y) * 0.2;
+    p.x += (p.targetX - p.x) * 0.45;
+    p.y += (p.targetY - p.y) * 0.45;
   }
 }
       // ✅ EVERYONE draws
@@ -88,9 +100,11 @@ if (!window.isHost) {
           name: p.name
         })),
         pipes: pipes.map(pipe => ({
-          x: pipe.x,
-          topHeight: pipe.topHeight
-        }))
+  x: pipe.x,
+  topHeight: pipe.topHeight,
+  width: pipe.width,
+  spacing: pipe.spacing
+}))
       });
     }
 
@@ -130,7 +144,8 @@ if (!window.isHost) {
         socket.emit('submitScore', {
           name: p.name,
           score: finalScore,
-          mode: currentModeKey
+          mode: currentModeKey,
+          color: p.color
         });
       }
   

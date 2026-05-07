@@ -11,11 +11,11 @@ const PORT = process.env.PORT || 3000;
 
 app.use(express.static(path.join(__dirname, '/')));
 
-let globalLeaderboard = [
-  { name: "CORE_PILOT", score: 1000, mode: "classic" },
-  { name: "NEON_BIRD",  score: 750,  mode: "classic" },
-  { name: "STQCKZZ",    score: 500,  mode: "hardcore" }
-];
+let globalLeaderboard = [];
+
+function seedLeaderboardForTesting() {
+  globalLeaderboard = [];
+}
 
 let activeRooms = []; // { id, privacy, playerCount, maxPlayers, hostId }
 
@@ -33,13 +33,14 @@ io.on('connection', (socket) => {
   });
   socket.on('flap', (data) => {
     if (!data || !data.id) return;
-  
+
     // send flap to everyone else in the room
     socket.to(data.sessionId).emit('flap', data);
   });
   // Initial data push
   socket.emit('updateLeaderboard', globalLeaderboard);
   socket.emit('publicRooms', activeRooms.filter(r => r.privacy === 'public'));
+  
 
   // ---- PROFILE RELAY ----
   socket.on('updateProfile', (data) => {
@@ -64,64 +65,101 @@ io.on('connection', (socket) => {
     globalLeaderboard.push({
       name: data.name || 'ANON',
       score: data.score,
-      mode: data.mode || 'classic'
+      mode: data.mode || 'classic',
+      color: data.color || '#ffffff'
     });
     globalLeaderboard.sort((a, b) => b.score - a.score);
     globalLeaderboard = globalLeaderboard.slice(0, 50);
     io.emit('updateLeaderboard', globalLeaderboard);
   });
+  socket.on('get-leaderboard', (callback) => {
+  if (typeof callback === 'function') {
+    callback(globalLeaderboard);
+  }
+});
 
   // ---- LOBBY ----
   socket.on('createRoom', (data) => {
-    if (!data || !data.id) return;
-    const id = String(data.id).toUpperCase();
-    const maxPlayers = Number(data.maxPlayers) || 4;
-    const privacy = data.privacy || 'public';
+  if (!data || !data.id) return;
 
-    socket.join(id);
+  const id = String(data.id).toUpperCase();
+  const maxPlayers = Number(data.maxPlayers) || 4;
+  const privacy = data.privacy || 'public';
 
-    let room = activeRooms.find(r => r.id === id);
-    if (!room) {
-      room = { id, privacy, playerCount: 1, maxPlayers, hostId: socket.id };
-      activeRooms.push(room);
-    } else {
-      room.playerCount = (io.sockets.adapter.rooms.get(id) || new Set()).size;
-    }
+  socket.join(id);
 
-    socket.emit('roomJoined', {
-      sessionId: id,
-      maxPlayers: room.maxPlayers,
-      isHost: true,
-      existingPlayers: []
-    });
-    io.emit('publicRooms', activeRooms.filter(r => r.privacy === 'public'));
-  });
+  // create or update room
+  let room = activeRooms.find(r => r.id === id);
+
+  if (!room) {
+    room = {
+      id,
+      privacy,
+      maxPlayers,
+      hostId: socket.id,
+      playerCount: 1
+    };
+    activeRooms.push(room);
+  } else {
+    room.maxPlayers = maxPlayers;
+    room.privacy = privacy;
+  }
+
+  // ALWAYS recompute player count accurately
+  const set = io.sockets.adapter.rooms.get(id);
+  room.playerCount = set ? set.size : 1;
+
+  socket.emit('roomJoined', {
+    sessionId: id,
+    maxPlayers: room.maxPlayers,
+    isHost: true,
+    existingPlayers: []
+  });
+
+  // IMPORTANT: broadcast updated room list AFTER state is correct
+  io.emit('publicRooms', activeRooms.filter(r => r.privacy === 'public'));
+});
 
   socket.on('joinSession', (sessionId) => {
-    if (!sessionId) return;
-    const id = String(sessionId).toUpperCase();
-    const room = activeRooms.find(r => r.id === id);
-    if (!room) { socket.emit('errorMsg', 'Room not found'); return; }
+  if (!sessionId) return;
 
-    const current = (io.sockets.adapter.rooms.get(id) || new Set()).size;
-    if (current >= room.maxPlayers) { socket.emit('errorMsg', 'Room is full!'); return; }
+  const id = String(sessionId).toUpperCase();
 
-    socket.join(id);
-    room.playerCount = current + 1;
+  // find room ONCE only
+  const room = activeRooms.find(r => r.id === id);
 
-    const peers = Array.from(io.sockets.adapter.rooms.get(id) || [])
-      .filter(sid => sid !== socket.id);
+  if (!room) {
+    socket.emit('errorMsg', 'Room not found');
+    return;
+  }
 
-    socket.emit('roomJoined', {
-      sessionId: id,
-      maxPlayers: room.maxPlayers,
-      isHost: false,
-      existingPlayers: peers
-    });
+  const set = io.sockets.adapter.rooms.get(id);
+  const current = set ? set.size : 0;
 
-    socket.to(id).emit('playerJoinedRoom', { id: socket.id });
-    io.emit('publicRooms', activeRooms.filter(r => r.privacy === 'public'));
-  });
+  if (current >= room.maxPlayers) {
+    socket.emit('errorMsg', 'Room is full!');
+    return;
+  }
+
+  socket.join(id);
+
+  // update player count safely
+  const updatedSet = io.sockets.adapter.rooms.get(id);
+  room.playerCount = updatedSet ? updatedSet.size : 1;
+
+  const peers = Array.from(updatedSet || []).filter(sid => sid !== socket.id);
+
+  socket.emit('roomJoined', {
+    sessionId: id,
+    maxPlayers: room.maxPlayers,
+    isHost: false,
+    existingPlayers: peers
+  });
+
+  socket.to(id).emit('playerJoinedRoom', { id: socket.id });
+
+  io.emit('publicRooms', activeRooms.filter(r => r.privacy === 'public'));
+});
 
   // ---- START ----
   socket.on('requestStart', (sessionId) => {

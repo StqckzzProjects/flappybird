@@ -268,3 +268,121 @@
   .player-card { min-height: 130px; }
   .add-player-card { min-height: 130px; font-size: 14px; }
 }
+.public-room-card {
+  border: 2px solid white;
+  padding: 10px;
+  margin-bottom: 10px;
+  background: rgba(255,255,255,0.05);
+}
+/* =========================
+   LEADERBOARD
+========================= */
+
+#leaderboard-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  width: 100%;
+}
+
+#leaderboard-list li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  padding: 10px 14px;
+  margin-bottom: 8px;
+
+  border: 2px solid rgba(255,255,255,0.15);
+  border-radius: 10px;
+
+  background: rgba(255,255,255,0.05);
+
+  font-family: monospace;
+  color: white;
+
+  transition: transform 0.15s ease;
+}
+
+#leaderboard-list li:hover {
+  transform: scale(1.02);
+}
+
+/* =========================
+   RANK
+========================= */
+
+.lb-rank {
+  min-width: 45px;
+
+  font-weight: bold;
+  font-size: 16px;
+
+  text-align: center;
+
+  padding: 5px 8px;
+
+  border-radius: 8px;
+
+  background: rgba(255,255,255,0.08);
+}
+
+/* top 3 styling */
+
+.lb-rank.gold {
+  color: #ffd700;
+  border: 1px solid #ffd700;
+}
+
+.lb-rank.silver {
+  color: #c0c0c0;
+  border: 1px solid #c0c0c0;
+}
+
+.lb-rank.bronze {
+  color: #cd7f32;
+  border: 1px solid #cd7f32;
+}
+
+/* =========================
+   PLAYER NAME
+========================= */
+
+.lb-name {
+  flex: 1;
+
+  margin-left: 12px;
+
+  font-weight: bold;
+  font-size: 15px;
+}
+
+/* =========================
+   SCORE
+========================= */
+
+.lb-score {
+  font-size: 16px;
+  font-weight: bold;
+
+  margin-left: 10px;
+}
+
+/* =========================
+   MODE TAG
+========================= */
+
+.mode-tag {
+  margin-left: 12px;
+
+  padding: 4px 8px;
+
+  border-radius: 6px;
+
+  background: rgba(255,255,255,0.08);
+
+  font-size: 12px;
+  font-weight: bold;
+
+  text-transform: uppercase;
+}

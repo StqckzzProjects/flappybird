@@ -7,8 +7,13 @@ const uiAction = {
     document.getElementById('nav-menu').style.display = 'none';
     document.getElementById('lobby-menu').style.display = 'flex';
     document.getElementById('online-controls').style.display = (mode === 'online') ? 'block' : 'none';
+const addBtn = document.getElementById('add-local-player-btn');
 
+if (addBtn) {
+  addBtn.style.display = (mode === 'local') ? 'inline-block' : 'none';
+}
     activeConfigs = [];
+    window.isHost = (mode === 'local');
     if (mode === 'local') uiAction.addPlayer(true);
     uiAction.render();
   },
