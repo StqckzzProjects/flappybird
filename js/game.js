@@ -33,6 +33,11 @@ const gameEngine = {
   loop: () => {
     
     if (!gameRunning) return;
+    // make sure non-host actually runs rendering loop even if host logic is off
+if (!window.isHost && players.length === 0) {
+  requestAnimationFrame(gameEngine.loop);
+  return;
+}
 
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     const m = ModeHandler.getCurrent();
@@ -45,7 +50,7 @@ const gameEngine = {
 
     pipes.forEach((p, i) => {
 
-  // ONLY host updates pipes
+  // host updates physics
   if (window.isHost) {
     p.update(canvas.height);
 
@@ -54,9 +59,8 @@ const gameEngine = {
     }
   }
 
-  // EVERYONE draws pipes
+  // EVERYONE ALWAYS RENDERS
   p.draw(ctx, canvas.height);
-
 });
 
     players.forEach(p => {
@@ -78,13 +82,13 @@ const gameEngine = {
         }
       }
     // smooth movement for non-host
-if (!window.isHost) {
-  if (!window.isHost && p.targetX !== undefined) {
-  p.x += (p.targetX - p.x) * 0.25;
-  p.y += (p.targetY - p.y) * 0.25;
-}
+// NON-HOST smooth interpolation (FIXED)
+if (!window.isHost && p.targetX != null && p.targetY != null) {
+  p.x += (p.targetX - p.x) * 0.35;
+  p.y += (p.targetY - p.y) * 0.35;
 }
       // ✅ EVERYONE draws
+      if (!window.isHost && (p.x == null || p.y == null)) return;
       p.draw(ctx);
     });
 
@@ -92,17 +96,25 @@ if (!window.isHost) {
       const sessionId = (document.getElementById('session-id').value || '').trim().toUpperCase();
     
       socket.emit('syncGame', {
-  sessionId,
-  players: players.map(p => ({
-    id: p.id,
-    x: p.x,
-    y: p.y,
-    isDead: p.isDead,
-    distance: p.distance,
-    color: p.color,
-    name: p.name
-  }))
-});
+        sessionId,
+        players: players.map(p => ({
+          id: p.id,
+          x: p.x,
+          y: p.y,
+          isDead: p.isDead,
+          distance: p.distance,
+          color: p.color,
+          name: p.name
+        })),
+        // 👇 ADD THIS ENTIRE PIPES ARRAY 👇
+        pipes: pipes.map(pipe => ({
+          x: pipe.x,
+          topHeight: pipe.topHeight,
+          width: pipe.width,
+          spacing: pipe.spacing
+        }))
+        // 👆 ---------------------------- 👆
+      });
     }
 
     if (players.length > 0 && players.every(p => p.isDead)) {

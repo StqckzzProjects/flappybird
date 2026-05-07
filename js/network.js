@@ -123,41 +123,56 @@ socket.on && socket.on('playerLeftRoom', (data) => {
 });
 
 socket.on('gameUpdate', (data) => {
-  if (!gameRunning || !data) return;
+  if (!gameRunning || !data) return;
 
-  // sync real pipes from host (FIX FOR DESYNC + LAG)
-if (Array.isArray(data.pipes)) {
-
-  // create missing pipes
-  while (pipes.length < data.pipes.length) {
-    pipes.push(
-      new window.Pipe(
-        ModeHandler.getCurrent(),
-        canvas.width,
-        canvas.height
-      )
-    );
+  // 👇 ADDED PLAYER SYNC HERE 👇
+  if (Array.isArray(data.players)) {
+    data.players.forEach(serverPlayer => {
+      // Find the matching player in our local game loop
+      const localPlayer = players.find(p => p.id === serverPlayer.id);
+      if (localPlayer) {
+        // Feed the coordinates to the interpolation engine
+        localPlayer.targetX = serverPlayer.x;
+        localPlayer.targetY = serverPlayer.y;
+        localPlayer.isDead = serverPlayer.isDead;
+        localPlayer.distance = serverPlayer.distance;
+      }
+    });
   }
+  // 👆 --------------------------- 👆
 
-  // remove extra pipes
-  while (pipes.length > data.pipes.length) {
-    pipes.pop();
+  // sync real pipes from host (FIX FOR DESYNC + LAG)
+  if (Array.isArray(data.pipes)) {
+    // create missing pipes
+    while (pipes.length < data.pipes.length) {
+      pipes.push(
+        new window.Pipe(
+          ModeHandler.getCurrent(),
+          canvas.width,
+          canvas.height
+        )
+      );
+    }
+
+    // remove extra pipes
+    while (pipes.length > data.pipes.length) {
+      pipes.pop();
+    }
+
+    // sync pipe state exactly from host
+    data.pipes.forEach((pipeData, i) => {
+      if (!pipes[i]) return;
+      pipes[i].x = pipeData.x;
+      pipes[i].topHeight = pipeData.topHeight;
+      pipes[i].width = pipeData.width;
+      pipes[i].spacing = pipeData.spacing;
+    });
   }
-
-  // sync pipe state exactly from host
-  data.pipes.forEach((pipeData, i) => {
-    if (!pipes[i]) return;
-
-    pipes[i].x = pipeData.x;
-    pipes[i].topHeight = pipeData.topHeight;
-    pipes[i].width = pipeData.width;
-    pipes[i].spacing = pipeData.spacing;
-  });
-}
 });
 
-socket.on && socket.on('startGameNow', () => {
+socket.on('startGameNow', () => {
   window.finalResults = [];
+  gameRunning = true; // 🔥 THIS IS REQUIRED
   gameEngine.start();
 });
 socket.on && socket.on('errorMsg', (msg) => {

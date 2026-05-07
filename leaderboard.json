@@ -8,6 +8,13 @@
   },
   {
     "name": "PLAYER 1",
+    "score": 61,
+    "mode": "classic",
+    "color": "#ffffff",
+    "time": 1778179945368
+  },
+  {
+    "name": "PLAYER 1",
     "score": 59,
     "mode": "classic",
     "color": "#00d2ff",
@@ -82,5 +89,33 @@
     "mode": "classic",
     "color": "#00d2ff",
     "time": 1778169371212
+  },
+  {
+    "name": "PLAYER 1",
+    "score": 4,
+    "mode": "classic",
+    "color": "#00d2ff",
+    "time": 1778178159527
+  },
+  {
+    "name": "PLAYER 1",
+    "score": 4,
+    "mode": "classic",
+    "color": "#00d2ff",
+    "time": 1778178719520
+  },
+  {
+    "name": "PLAYER 1",
+    "score": 4,
+    "mode": "classic",
+    "color": "#00d2ff",
+    "time": 1778178844786
+  },
+  {
+    "name": "PLAYER 1",
+    "score": 4,
+    "mode": "classic",
+    "color": "#00d2ff",
+    "time": 1778179945354
   }
 ]
