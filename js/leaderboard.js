@@ -1,14 +1,34 @@
 let __leaderboardCache = [];
+let showAllScores = false;
+  function toggleLeaderboardView() {
 
+  showAllScores = !showAllScores;
+
+  const btn = document.getElementById('toggle-leaderboard-btn');
+
+  if (btn) {
+    btn.innerText = showAllScores
+      ? 'SHOW TOP 5'
+      : 'SHOW ALL';
+  }
+
+  renderLeaderboard();
+}
 function renderLeaderboard() {
+
   const ul = document.getElementById('leaderboard-list');
   const modeSel = document.getElementById('leaderboard-mode');
   if (!ul) return;
   const mode = modeSel ? modeSel.value : 'all';
-  const filtered = (mode === 'all'
+  let filtered = (
+  mode === 'all'
     ? __leaderboardCache
     : __leaderboardCache.filter(e => e.mode === mode)
-  ).slice(0, 20);
+);
+
+if (!showAllScores) {
+  filtered = filtered.slice(0, 5);
+}
   ul.innerHTML = filtered.map((e, i) => {
 
   let rankClass = '';

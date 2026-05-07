@@ -2,7 +2,7 @@ const express = require('express');
 const http = require('http');
 const { Server } = require('socket.io');
 const path = require('path');
-
+const fs = require('fs');
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server);
@@ -11,10 +11,19 @@ const PORT = process.env.PORT || 3000;
 
 app.use(express.static(path.join(__dirname, '/')));
 
+const LEADERBOARD_FILE = './leaderboard.json';
+
 let globalLeaderboard = [];
 
-function seedLeaderboardForTesting() {
-  globalLeaderboard = [];
+// load saved leaderboard
+if (fs.existsSync(LEADERBOARD_FILE)) {
+  try {
+    const raw = fs.readFileSync(LEADERBOARD_FILE, 'utf8');
+    globalLeaderboard = JSON.parse(raw);
+  } catch (err) {
+    console.error('Failed to load leaderboard:', err);
+    globalLeaderboard = [];
+  }
 }
 
 let activeRooms = []; // { id, privacy, playerCount, maxPlayers, hostId }
@@ -61,17 +70,48 @@ io.on('connection', (socket) => {
 
   // ---- LEADERBOARD ----
   socket.on('submitScore', (data) => {
-    if (!data || typeof data.score !== 'number' || data.score <= 0) return;
-    globalLeaderboard.push({
-      name: data.name || 'ANON',
-      score: data.score,
-      mode: data.mode || 'classic',
-      color: data.color || '#ffffff'
-    });
-    globalLeaderboard.sort((a, b) => b.score - a.score);
-    globalLeaderboard = globalLeaderboard.slice(0, 50);
+
+  if (!data || typeof data.score !== 'number' || data.score <= 0) {
+    return;
+  }
+
+  const entry = {
+    name: data.name || 'ANON',
+    score: data.score,
+    mode: data.mode || 'classic',
+    color: data.color || '#ffffff',
+    time: Date.now()
+  };
+
+  // save ALL scores forever
+  globalLeaderboard.push(entry);
+
+  // sort highest first
+  globalLeaderboard.sort((a, b) => b.score - a.score);
+
+  // save to file permanently
+  try {
+    fs.writeFileSync(
+      LEADERBOARD_FILE,
+      JSON.stringify(globalLeaderboard, null, 2)
+    );
+  } catch (err) {
+    console.error('Failed to save leaderboard:', err);
+  }
+
+  // only broadcast if score entered top 10
+  const top10 = globalLeaderboard.slice(0, 10);
+
+  const madeTop10 = top10.some(s =>
+    s.name === entry.name &&
+    s.score === entry.score &&
+    s.time === entry.time
+  );
+
+  if (madeTop10) {
     io.emit('updateLeaderboard', globalLeaderboard);
-  });
+  }
+});
   socket.on('get-leaderboard', (callback) => {
   if (typeof callback === 'function') {
     callback(globalLeaderboard);

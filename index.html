@@ -32,6 +32,9 @@
                         <option value="4">4 PLAYERS</option>
                         <option value="6">6 PLAYERS (MAX)</option>
                     </select>
+                    <button id="toggle-leaderboard-btn" onclick="toggleLeaderboardView()">
+  SHOW ALL
+</button>
                     <button class="net-btn host" onclick="netAction.host()">CREATE</button>
                 </div>
                 <select id="leaderboard-mode">
@@ -40,9 +43,7 @@
                     <option value="hardcore">HARDCORE</option>
                   </select>
                   <div id="leaderboard-list"></div>
-<button id="add-local-player-btn" onclick="uiAction.addPlayer(true)">
-  ADD PLAYER
-</button>
+
                 <div class="rooms-container">
                     <h3>ACTIVE CORES</h3>
                     <div id="rooms-list-data"></div>
@@ -55,7 +56,14 @@
             </div>
 
             <div class="lobby-grid" id="player-slots-container"></div>
-
+<button
+  id="add-local-player-btn"
+  class="initialize-btn"
+  onclick="uiAction.addPlayer(true)"
+  style="display:none; margin-top:15px;"
+>
+  ADD LOCAL PLAYER
+</button>
             <div class="settings-bar">
                 <select id="game-mode">
                     <option value="classic">CLASSIC PROTOCOL</option>
@@ -71,7 +79,9 @@
         <div id="die-menu" class="overlay" style="display:none;">
             <h1 class="neon-header" style="color: #ff3131;">SYSTEM CRASH</h1>
             <div id="results-list"></div>
-            <button class="initialize-btn" onclick="gameEngine.start()">REBOOT</button>
+            <button class="initialize-btn" onclick="rebootGame()">
+  REBOOT
+</button>
             <button class="terminate-session" onclick="location.reload()">MENU</button>
         </div>
 

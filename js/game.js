@@ -10,7 +10,9 @@ const gameEngine = {
     document.getElementById('die-menu').style.display = 'none';
     canvas.style.display = 'block';
     pipes = [];
-    players = activeConfigs.map(c => new window.Bird(c));
+    players = activeConfigs.map(c => new window.Bird({
+  ...c
+}));
 
     gameRunning = true;
     frameCount = 0;

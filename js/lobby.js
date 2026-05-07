@@ -19,11 +19,30 @@ if (addBtn) {
   },
 
   addPlayer: (isLocal = false, remoteData = null) => {
-    const newId = remoteData
-      ? remoteData.id
-      : (isLocal ? (socket.id || `local_${Math.random().toString(36).substr(2,5)}`)
-                 : `remote_${Math.random().toString(36).substr(2, 5)}`);
+    let newId;
 
+if (remoteData) {
+
+  newId = remoteData.id;
+
+} else if (isLocal) {
+
+  // LOCAL MODE = unique IDs for every player
+  const onlineMode =
+    document.getElementById('online-controls').style.display !== 'none';
+
+  if (onlineMode) {
+    // online local player = actual socket id
+    newId = socket.id;
+  } else {
+    // true local multiplayer
+    newId = `local_${Math.random().toString(36).substr(2, 5)}`;
+  }
+
+} else {
+
+  newId = `remote_${Math.random().toString(36).substr(2, 5)}`;
+}
     if (activeConfigs.some(p => p.id === newId)) return;
     if (activeConfigs.length >= maxRoomSize) return;
 
@@ -82,7 +101,12 @@ if (addBtn) {
             onchange="uiAction.updateName(${i}, this.value)">
           <input type="color" value="${p.color}" ${isMe ? '' : 'disabled'}
             onchange="uiAction.updateColor(${i}, this.value)">
-          <div class="key-box">${p.keyName}</div>
+          <div
+  class="key-box"
+  onclick="uiAction.startKeyBind(${i})"
+>
+  ${p.keyName}
+</div>
         </div>
       `;
     }).join('');
@@ -95,6 +119,59 @@ if (addBtn) {
         sessionId,
         config: activeConfigs[idx]
       });
+      
     }
-  }
+  },
+  startKeyBind: (idx) => {
+
+  const player = activeConfigs[idx];
+  if (!player) return;
+
+  // prevent editing remote players
+  const isMe = player.id === socket.id || player.isLocal;
+
+  if (!isMe) return;
+
+  bindingIndex = idx;
+
+  const boxes = document.querySelectorAll('.key-box');
+
+  if (boxes[idx]) {
+    boxes[idx].innerText = 'PRESS KEY';
+  }
+},
 };
+window.addEventListener('keydown', (e) => {
+
+  if (bindingIndex === -1) return;
+
+  e.preventDefault();
+
+  const player = activeConfigs[bindingIndex];
+
+  if (!player) {
+    bindingIndex = -1;
+    return;
+  }
+
+  player.key = e.keyCode;
+
+  // prettier key names
+  const keyMap = {
+    32: 'SPACE',
+    37: 'LEFT',
+    38: 'UP',
+    39: 'RIGHT',
+    40: 'DOWN'
+  };
+
+  player.keyName =
+    keyMap[e.keyCode] ||
+    e.key.toUpperCase();
+
+  uiAction.render();
+
+  uiAction.syncProfile(bindingIndex);
+
+  bindingIndex = -1;
+});

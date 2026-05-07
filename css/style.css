@@ -386,3 +386,20 @@
 
   text-transform: uppercase;
 }
+#toggle-leaderboard-btn {
+  margin-top: 10px;
+  padding: 8px 14px;
+
+  border: 2px solid white;
+  border-radius: 8px;
+
+  background: rgba(255,255,255,0.08);
+  color: white;
+
+  font-family: monospace;
+  cursor: pointer;
+}
+
+#toggle-leaderboard-btn:hover {
+  background: rgba(255,255,255,0.15);
+}
