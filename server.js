@@ -209,9 +209,11 @@ io.on('connection', (socket) => {
 
   // ---- GAME SYNC ----
   socket.on('syncGame', (data) => {
-    if (!data || !data.sessionId) return;
-    socket.to(data.sessionId).emit('gameUpdate', data);
-  });
+  if (!data || !data.sessionId) return;
+
+  // immediate relay (no buffering)
+  socket.to(data.sessionId).volatile.emit('gameUpdate', data);
+});
 
   // ---- DISCONNECT ----
   socket.on('disconnect', () => {
