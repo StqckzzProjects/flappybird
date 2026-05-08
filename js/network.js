@@ -184,8 +184,11 @@ socket.on('startGameNow', () => {
 socket.on && socket.on('errorMsg', (msg) => {
   alert(msg);
 });
-socket.on && socket.on('publicRooms', (rooms) => {
+socket.on('publicRooms', (rooms) => {
+  renderPublicRooms(rooms);
+
   const active = document.getElementById('rooms-list-data');
+
   if (!active) return;
 
   active.innerHTML = rooms.map(r => `
@@ -240,10 +243,37 @@ function renderPublicRooms(rooms) {
     </div>
   `).join('');
 }
-function joinPublicRoom(roomId) {
-
+window.joinPublicRoom = function(roomId) {
   document.getElementById('session-id').value = roomId;
-
   netAction.join();
-
+};
+if (socket.connected) {
+  socket.emit('requestPublicRooms');
 }
+
+socket.on('connect', () => {
+  socket.emit('requestPublicRooms');
+});
+socket.on('forceGameOver', (data) => {
+
+  if (Array.isArray(data.players)) {
+    window.finalResults = data.players;
+
+    data.players.forEach(serverPlayer => {
+
+      const localPlayer = players.find(
+        p => p.id === serverPlayer.id
+      );
+
+      if (localPlayer) {
+        localPlayer.isDead = true;
+      }
+    });
+  }
+
+  gameRunning = false;
+
+  setTimeout(() => {
+    gameEngine.over();
+  }, 500);
+});

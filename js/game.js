@@ -81,35 +81,59 @@ pipes.forEach((p, i) => {
 
     // 2. UPDATE PLAYERS (Prediction + Interpolation)
     players.forEach(p => {
-      const isMyBird = p.id === socket.id;
 
-      // PREDICTION: If it's your bird OR you are host, run physics locally
-      if (window.isHost || isMyBird) {
-        if (!p.isDead) {
-          p.update(canvas.height, deltaTime);
-          
-          if (window.isHost) { // Collision stays on Host authority
-            pipes.forEach(pipe => {
-              if (p.x + p.radius > pipe.x && p.x - p.radius < pipe.x + pipe.width) {
-                if (p.y - p.radius < pipe.topHeight || p.y + p.radius > pipe.topHeight + pipe.spacing) {
-                  if (!p.isDead) {
-                    p.isDead = true;
-                    gameEngine.announceDeath(p.name, p.color);
-                  }
-                }
-              }
-            });
+  const isMyBird = p.id === socket.id;
+
+  // HOST RUNS EVERYTHING
+  if (window.isHost) {
+
+    if (!p.isDead) {
+      p.update(canvas.height, deltaTime);
+
+      pipes.forEach(pipe => {
+        if (
+          p.x + p.radius > pipe.x &&
+          p.x - p.radius < pipe.x + pipe.width
+        ) {
+          if (
+            p.y - p.radius < pipe.topHeight ||
+            p.y + p.radius > pipe.topHeight + pipe.spacing
+          ) {
+            if (!p.isDead) {
+              p.isDead = true;
+              gameEngine.announceDeath(p.name, p.color);
+            }
           }
         }
-      } else {
-        // INTERPOLATION: Smoothly move other players based on host data
-        if (p.targetY != null) {
-          const smooth = Math.min(0.18 * deltaTime, 1);
-p.y += (p.targetY - p.y) * smooth;
-        }
+      });
+    }
+
+  } else {
+
+    // MY OWN BIRD = FULL LOCAL PHYSICS
+    if (isMyBird) {
+
+      if (!p.isDead) {
+        p.update(canvas.height, deltaTime);
       }
-      p.draw(ctx);
-    });
+
+      // tiny correction only
+      if (p.targetY != null) {
+        p.y += (p.targetY - p.y) * 0.03;
+      }
+
+    } else {
+
+      // OTHER PLAYERS = interpolation
+      if (p.targetY != null) {
+        p.y += (p.targetY - p.y) * 0.35;
+      }
+
+    }
+  }
+
+  p.draw(ctx);
+});
 
     // 🔥 PERFORMANCE FIX: Only sync every 2nd frame to prevent lag spikes
     if (socket.connected && window.isHost && frameCount % 3 === 0) {
@@ -136,21 +160,34 @@ p.y += (p.targetY - p.y) * smooth;
       });
     }
 
-    if (players.length > 0 && players.every(p => p.isDead)) {
-      gameRunning = false;
-    
-      if (socket.connected) {
-        const sessionId = (document.getElementById('session-id').value || '').trim().toUpperCase();
-    
-        socket.emit('gameOver', {
-          sessionId,
-          players
-        });
-      }
-    
-      setTimeout(() => gameEngine.over(), 1000);
-      return;
-    }
+if (players.length > 0 && players.every(p => p.isDead)) {
+
+  gameRunning = false;
+
+  const sessionId = (
+    document.getElementById('session-id').value || ''
+  ).trim().toUpperCase();
+
+  // HOST TELLS EVERYONE TO END
+  if (socket.connected && window.isHost) {
+
+    socket.emit('forceGameOver', {
+      sessionId,
+      players
+    });
+
+    socket.emit('gameOver', {
+      sessionId,
+      players
+    });
+  }
+
+  setTimeout(() => {
+    gameEngine.over();
+  }, 500);
+
+  return;
+}
 
     requestAnimationFrame(gameEngine.loop);
   },

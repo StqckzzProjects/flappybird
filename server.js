@@ -6,7 +6,12 @@ const fs = require('fs');
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server);
-
+function broadcastPublicRooms() {
+  io.emit(
+    'publicRooms',
+    activeRooms.filter(r => r.privacy === 'public')
+  );
+}
 const PORT = process.env.PORT || 3000;
 
 app.use(express.static(path.join(__dirname, '/')));
@@ -29,7 +34,17 @@ if (fs.existsSync(LEADERBOARD_FILE)) {
 let activeRooms = []; // { id, privacy, playerCount, maxPlayers, hostId }
 
 io.on('connection', (socket) => {
+  socket.on('requestPublicRooms', () => {
+  broadcastPublicRooms();
+});
   console.log(`Connection established: ${socket.id}`);
+  socket.on('forceGameOver', (data) => {
+  if (!data || !data.sessionId) return;
+
+  io.to(data.sessionId).emit('forceGameOver', {
+    players: data.players || []
+  });
+});
   socket.on('gameOver', (data) => {
     if (!data || !data.sessionId || !Array.isArray(data.players)) return;
   
@@ -44,6 +59,7 @@ io.on('connection', (socket) => {
     sessionId: data.sessionId
   });
 });
+
   // Initial data push
   socket.emit('updateLeaderboard', globalLeaderboard);
   socket.emit('publicRooms', activeRooms.filter(r => r.privacy === 'public'));
@@ -156,7 +172,7 @@ socket.emit('roomJoined', {
 });
 
   // IMPORTANT: broadcast updated room list AFTER state is correct
-  io.emit('publicRooms', activeRooms.filter(r => r.privacy === 'public'));
+  broadcastPublicRooms();
 });
 
   socket.on('joinSession', (sessionId) => {
@@ -185,6 +201,7 @@ socket.emit('roomJoined', {
   // update player count safely
   const updatedSet = io.sockets.adapter.rooms.get(id);
   room.playerCount = updatedSet ? updatedSet.size : 1;
+broadcastPublicRooms();
 
   const peers = Array.from(updatedSet || []).filter(sid => sid !== socket.id);
 
@@ -197,7 +214,7 @@ socket.emit('roomJoined', {
 
   socket.to(id).emit('playerJoinedRoom', { id: socket.id });
 
-  io.emit('publicRooms', activeRooms.filter(r => r.privacy === 'public'));
+broadcastPublicRooms();
 });
 
   // ---- START ----
@@ -247,7 +264,7 @@ socket.on('disconnect', () => {
     io.to(room.id).emit('playerLeftRoom', { id: socket.id });
   }
 
-  io.emit('publicRooms', activeRooms.filter(r => r.privacy === 'public'));
+  broadcastPublicRooms();
   console.log(`Connection terminated: ${socket.id}`);
 });
 });

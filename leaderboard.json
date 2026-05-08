@@ -1,10 +1,38 @@
 [
   {
     "name": "PLAYER 1",
+    "score": 154,
+    "mode": "classic",
+    "color": "#00d2ff",
+    "time": 1778256422554
+  },
+  {
+    "name": "PLAYER 1",
     "score": 114,
     "mode": "classic",
     "color": "#00d2ff",
     "time": 1778169640080
+  },
+  {
+    "name": "PLAYER 1",
+    "score": 84,
+    "mode": "classic",
+    "color": "#00d2ff",
+    "time": 1778255956628
+  },
+  {
+    "name": "PLAYER 1",
+    "score": 83,
+    "mode": "classic",
+    "color": "#00d2ff",
+    "time": 1778256287755
+  },
+  {
+    "name": "PLAYER 1",
+    "score": 74,
+    "mode": "classic",
+    "color": "#00d2ff",
+    "time": 1778256337188
   },
   {
     "name": "PLAYER 1",
@@ -50,10 +78,38 @@
   },
   {
     "name": "PLAYER 1",
+    "score": 24,
+    "mode": "classic",
+    "color": "#00d2ff",
+    "time": 1778255935247
+  },
+  {
+    "name": "PLAYER 1",
     "score": 23,
     "mode": "classic",
     "color": "#00d2ff",
     "time": 1778169366065
+  },
+  {
+    "name": "PLAYER 1",
+    "score": 13,
+    "mode": "classic",
+    "color": "#00d2ff",
+    "time": 1778256479185
+  },
+  {
+    "name": "PLAYER 1",
+    "score": 13,
+    "mode": "classic",
+    "color": "#00d2ff",
+    "time": 1778256839916
+  },
+  {
+    "name": "PLAYER 1",
+    "score": 13,
+    "mode": "classic",
+    "color": "#00d2ff",
+    "time": 1778256839921
   },
   {
     "name": "PLAYER 1",
@@ -99,6 +155,13 @@
   },
   {
     "name": "PLAYER 1",
+    "score": 7,
+    "mode": "classic",
+    "color": "#00d2ff",
+    "time": 1778256055408
+  },
+  {
+    "name": "PLAYER 1",
     "score": 4,
     "mode": "classic",
     "color": "#00d2ff",
@@ -138,5 +201,33 @@
     "mode": "classic",
     "color": "#00d2ff",
     "time": 1778198607633
+  },
+  {
+    "name": "PLAYER 1",
+    "score": 4,
+    "mode": "classic",
+    "color": "#00d2ff",
+    "time": 1778256054910
+  },
+  {
+    "name": "PLAYER 1",
+    "score": 4,
+    "mode": "classic",
+    "color": "#00d2ff",
+    "time": 1778256336690
+  },
+  {
+    "name": "PLAYER 1",
+    "score": 4,
+    "mode": "classic",
+    "color": "#00d2ff",
+    "time": 1778256479171
+  },
+  {
+    "name": "PLAYER 1",
+    "score": 4,
+    "mode": "classic",
+    "color": "#00d2ff",
+    "time": 1778256839923
   }
 ]
