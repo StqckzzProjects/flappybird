@@ -22,10 +22,11 @@ const gameEngine = {
     // 👇 ADD THIS TO FIX THE MISSING BIRD:
    lastTime = performance.now();
 
-if (window.gameLoopRunning) return;
+cancelAnimationFrame(window.currentGameLoop);
+
 window.gameLoopRunning = true;
 
-requestAnimationFrame(gameEngine.loop);
+window.currentGameLoop = requestAnimationFrame(gameEngine.loop);
   },
 
   announceDeath: (name, color) => {
@@ -189,10 +190,13 @@ if (players.length > 0 && players.every(p => p.isDead)) {
   return;
 }
 
-    requestAnimationFrame(gameEngine.loop);
+   window.currentGameLoop =
+  requestAnimationFrame(gameEngine.loop);
   },
 
   over: () => {
+    gameRunning = false;
+window.gameLoopRunning = false;
     canvas.style.display = 'none';
     document.getElementById('die-menu').style.display = 'flex';
   

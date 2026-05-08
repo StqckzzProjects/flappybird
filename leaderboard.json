@@ -141,6 +141,20 @@
   },
   {
     "name": "PLAYER 1",
+    "score": 8,
+    "mode": "classic",
+    "color": "#00d2ff",
+    "time": 1778261203716
+  },
+  {
+    "name": "PLAYER 1",
+    "score": 8,
+    "mode": "classic",
+    "color": "#00d2ff",
+    "time": 1778261203725
+  },
+  {
+    "name": "PLAYER 1",
     "score": 7,
     "mode": "classic",
     "color": "#00d2ff",
@@ -159,6 +173,34 @@
     "mode": "classic",
     "color": "#00d2ff",
     "time": 1778256055408
+  },
+  {
+    "name": "PLAYER 1",
+    "score": 7,
+    "mode": "classic",
+    "color": "#00d2ff",
+    "time": 1778261206130
+  },
+  {
+    "name": "PLAYER 1",
+    "score": 7,
+    "mode": "classic",
+    "color": "#00d2ff",
+    "time": 1778261206132
+  },
+  {
+    "name": "PLAYER 1",
+    "score": 7,
+    "mode": "classic",
+    "color": "#00d2ff",
+    "time": 1778261208261
+  },
+  {
+    "name": "PLAYER 1",
+    "score": 7,
+    "mode": "classic",
+    "color": "#00d2ff",
+    "time": 1778261208262
   },
   {
     "name": "PLAYER 1",
@@ -229,5 +271,19 @@
     "mode": "classic",
     "color": "#00d2ff",
     "time": 1778256839923
+  },
+  {
+    "name": "PLAYER 1",
+    "score": 4,
+    "mode": "classic",
+    "color": "#00d2ff",
+    "time": 1778261486987
+  },
+  {
+    "name": "PLAYER 1",
+    "score": 4,
+    "mode": "classic",
+    "color": "#00d2ff",
+    "time": 1778261486990
   }
 ]
