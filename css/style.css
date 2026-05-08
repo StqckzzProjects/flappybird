@@ -403,3 +403,10 @@
 #toggle-leaderboard-btn:hover {
   background: rgba(255,255,255,0.15);
 }
+#birdCanvas {
+  width: 100vw;         /* Take up the full screen width */
+  height: 100vh;        /* Take up the full screen height */
+  object-fit: contain;  /* 🔥 THE MAGIC TRICK: Scales it perfectly without stretching */
+  margin: auto;
+  display: block;
+}
