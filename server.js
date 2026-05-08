@@ -222,7 +222,7 @@ socket.emit('roomJoined', {
   if (!data || !data.sessionId) return;
 
   // immediate relay (no buffering)
-  socket.to(data.sessionId).volatile.emit('gameUpdate', data);
+socket.to(data.sessionId).emit('gameUpdate', data);
 });
 
   // ---- DISCONNECT ----

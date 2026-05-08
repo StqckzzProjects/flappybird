@@ -146,14 +146,34 @@ socket.on('gameUpdate', (data) => {
     while (pipes.length > data.pipes.length) {
       pipes.pop();
     }
-    data.pipes.forEach((pipeData, i) => {
-      if (!pipes[i]) return;
-      pipes[i].x = pipeData.x;
-      pipes[i].topHeight = pipeData.topHeight;
-      pipes[i].width = pipeData.width;
-      pipes[i].spacing = pipeData.spacing;
-    });
+    pipes = data.pipes.map(pipeData => ({
+  x: pipeData.x,
+  topHeight: pipeData.topHeight,
+  width: pipeData.width,
+  spacing: pipeData.spacing,
+  draw: window.Pipe.prototype.draw
+}));
   }
+  // Force stop if everybody dead
+if (
+  Array.isArray(data.players) &&
+  data.players.length > 0 &&
+  data.players.every(p => p.isDead)
+) {
+  players.forEach(local => {
+    const serverPlayer = data.players.find(p => p.id === local.id);
+
+    if (serverPlayer) {
+      local.isDead = true;
+    }
+  });
+
+  gameRunning = false;
+
+  setTimeout(() => {
+    gameEngine.over();
+  }, 500);
+}
 });
 
 socket.on('startGameNow', () => {
@@ -164,26 +184,29 @@ socket.on('startGameNow', () => {
 socket.on && socket.on('errorMsg', (msg) => {
   alert(msg);
 });
+socket.on && socket.on('publicRooms', (rooms) => {
+  const active = document.getElementById('rooms-list-data');
+  if (!active) return;
+
+  active.innerHTML = rooms.map(r => `
+    <div class="active-room">
+      <strong>${r.id}</strong>
+      <span>${r.playerCount || 1}/${r.maxPlayers}</span>
+      <em>${r.privacy}</em>
+    </div>
+  `).join('');
+});
+
 socket.on && socket.on('flap', (data) => {
   if (!window.isHost) return;
-socket.on && socket.on('publicRooms', (rooms) => {
-  const active = document.getElementById('rooms-list-data');
-  if (!active) return;
 
-  active.innerHTML = rooms.map(r => `
-    <div class="active-room">
-      <strong>${r.id}</strong>
-      <span>${r.playerCount || 1}/${r.maxPlayers}</span>
-      <em>${r.privacy}</em>
-    </div>
-  `).join('');
-});
   const p = players.find(x => x.id === data.id);
+
   if (p && !p.isDead) {
     p.flap();
   }
-  
 });
+
 function renderPublicRooms(rooms) {
 
   const container = document.getElementById('public-rooms-list');

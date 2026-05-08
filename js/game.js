@@ -1,4 +1,6 @@
 const canvas = document.getElementById('birdCanvas');
+canvas.width = 1000;
+canvas.height = 700;
 const ctx = canvas.getContext('2d');
 let players = [], pipes = [], gameRunning = false, frameCount = 0;
 const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
@@ -18,8 +20,12 @@ const gameEngine = {
     frameCount = 0;
     
     // 👇 ADD THIS TO FIX THE MISSING BIRD:
-    lastTime = 0; 
-    requestAnimationFrame(gameEngine.loop); 
+   lastTime = performance.now();
+
+if (window.gameLoopRunning) return;
+window.gameLoopRunning = true;
+
+requestAnimationFrame(gameEngine.loop);
   },
 
   announceDeath: (name, color) => {
@@ -33,7 +39,10 @@ const gameEngine = {
   },
 
   loop: (timestamp) => {
-    if (!gameRunning) return;
+    if (!gameRunning) {
+  window.gameLoopRunning = false;
+  return;
+}
 
     if (!lastTime) lastTime = timestamp;
     const deltaTime = (timestamp - lastTime) / (1000 / 60); 
@@ -53,14 +62,22 @@ if (!window.isHost && players.length === 0) {
   }
 }
 
-    // 1. UPDATE PIPES (Everyone moves them locally for 60fps smoothness)
-    pipes.forEach((p, i) => {
-      p.update(canvas.height, deltaTime); 
-      if (window.isHost && p.x < -100) {
-        pipes.splice(i, 1);
-      }
-      p.draw(ctx, canvas.height);
-    });
+    // 1. UPDATE PIPES
+pipes.forEach((p, i) => {
+
+  // ONLY HOST MOVES PIPES
+  // clients just render synced positions
+  if (window.isHost) {
+    p.update(canvas.height, deltaTime);
+
+    if (p.x < -100) {
+      pipes.splice(i, 1);
+      return;
+    }
+  }
+
+  p.draw(ctx, canvas.height);
+});
 
     // 2. UPDATE PLAYERS (Prediction + Interpolation)
     players.forEach(p => {
@@ -87,14 +104,15 @@ if (!window.isHost && players.length === 0) {
       } else {
         // INTERPOLATION: Smoothly move other players based on host data
         if (p.targetY != null) {
-          p.y += (p.targetY - p.y) * 0.45;
+          const smooth = Math.min(0.18 * deltaTime, 1);
+p.y += (p.targetY - p.y) * smooth;
         }
       }
       p.draw(ctx);
     });
 
     // 🔥 PERFORMANCE FIX: Only sync every 2nd frame to prevent lag spikes
-    if (socket.connected && window.isHost && frameCount % 2 === 0) {
+    if (socket.connected && window.isHost && frameCount % 3 === 0) {
       const sessionId = (document.getElementById('session-id').value || '').trim().toUpperCase();
     
       socket.emit('syncGame', {
