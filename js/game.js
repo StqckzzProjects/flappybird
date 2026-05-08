@@ -2,8 +2,7 @@ const canvas = document.getElementById('birdCanvas');
 const ctx = canvas.getContext('2d');
 let players = [], pipes = [], gameRunning = false, frameCount = 0;
 const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-let lastSync = 0;
-const now = Date.now();
+let lastTime = 0; // Tracks time between frames
 const gameEngine = {
   start: () => {
     window.finalResults = [];
@@ -12,12 +11,15 @@ const gameEngine = {
     canvas.style.display = 'block';
     pipes = [];
     players = activeConfigs.map(c => new window.Bird({
-  ...c
-}));
+      ...c
+    }));
 
     gameRunning = true;
     frameCount = 0;
-    gameEngine.loop();
+    
+    // 👇 ADD THIS TO FIX THE MISSING BIRD:
+    lastTime = 0; 
+    requestAnimationFrame(gameEngine.loop); 
   },
 
   announceDeath: (name, color) => {
@@ -30,9 +32,12 @@ const gameEngine = {
     window.finalResults = [];
   },
 
-  loop: () => {
-    
+  loop: (timestamp) => {
     if (!gameRunning) return;
+
+    if (!lastTime) lastTime = timestamp;
+    const deltaTime = (timestamp - lastTime) / (1000 / 60); 
+    lastTime = timestamp;
     // make sure non-host actually runs rendering loop even if host logic is off
 if (!window.isHost && players.length === 0) {
   requestAnimationFrame(gameEngine.loop);
@@ -48,47 +53,43 @@ if (!window.isHost && players.length === 0) {
   }
 }
 
+    // 1. UPDATE PIPES (Everyone moves them locally for 60fps smoothness)
     pipes.forEach((p, i) => {
+      p.update(canvas.height, deltaTime); 
+      if (window.isHost && p.x < -100) {
+        pipes.splice(i, 1);
+      }
+      p.draw(ctx, canvas.height);
+    });
 
-  // host updates physics
-  if (window.isHost) {
-    p.update(canvas.height);
-
-    if (p.x < -100) {
-      pipes.splice(i, 1);
-    }
-  }
-
-  // EVERYONE ALWAYS RENDERS
-  p.draw(ctx, canvas.height);
-});
-
+    // 2. UPDATE PLAYERS (Prediction + Interpolation)
     players.forEach(p => {
-      if (window.isHost) {
-        // ONLY host runs physics
+      const isMyBird = p.id === socket.id;
+
+      // PREDICTION: If it's your bird OR you are host, run physics locally
+      if (window.isHost || isMyBird) {
         if (!p.isDead) {
-          p.update(canvas.height);
-    
-          pipes.forEach(pipe => {
-            if (p.x + p.radius > pipe.x && p.x - p.radius < pipe.x + pipe.width) {
-              if (p.y - p.radius < pipe.topHeight || p.y + p.radius > pipe.topHeight + pipe.spacing) {
-                if (!p.isDead) {
-                  p.isDead = true;
-                  gameEngine.announceDeath(p.name, p.color);
+          p.update(canvas.height, deltaTime);
+          
+          if (window.isHost) { // Collision stays on Host authority
+            pipes.forEach(pipe => {
+              if (p.x + p.radius > pipe.x && p.x - p.radius < pipe.x + pipe.width) {
+                if (p.y - p.radius < pipe.topHeight || p.y + p.radius > pipe.topHeight + pipe.spacing) {
+                  if (!p.isDead) {
+                    p.isDead = true;
+                    gameEngine.announceDeath(p.name, p.color);
+                  }
                 }
               }
-            }
-          });
+            });
+          }
+        }
+      } else {
+        // INTERPOLATION: Smoothly move other players based on host data
+        if (p.targetY != null) {
+          p.y += (p.targetY - p.y) * 0.45;
         }
       }
-    // smooth movement for non-host
-// NON-HOST smooth interpolation (FIXED)
-if (!window.isHost && p.targetX != null && p.targetY != null) {
-  p.x += (p.targetX - p.x) * 0.45;
-  p.y += (p.targetY - p.y) * 0.45;
-}
-      // ✅ EVERYONE draws
-      if (!window.isHost && (p.x == null || p.y == null)) return;
       p.draw(ctx);
     });
 
@@ -170,16 +171,17 @@ window.addEventListener('keydown', e => {
   if (!gameRunning) return;
   players.forEach(p => {
     const isLocal = p.id === socket.id || p.isLocal;
-    if (isLocal && e.keyCode === p.key) {
-      if (window.isHost) {
-        p.flap();
-      } else {
-        const sessionId = (document.getElementById('session-id').value || '').trim().toUpperCase();
+  if (isLocal && e.keyCode === p.key) {
+      // 1. JUMP INSTANTLY (Prediction)
+      p.flap(); 
 
-socket.emit('flap', {
-  id: socket.id,
-  sessionId
-});
+      // 2. TELL THE HOST (If you aren't the host)
+      if (!window.isHost) {
+        const sessionId = (document.getElementById('session-id').value || '').trim().toUpperCase();
+        socket.emit('flap', {
+          id: socket.id,
+          sessionId
+        });
       }
     }
   });
@@ -193,11 +195,12 @@ window.addEventListener('touchstart', (e) => {
     const isLocal = p.id === socket.id || p.isLocal;
 
     if (isLocal) {
-      if (window.isHost) {
-        p.flap();
-      } else {
-        const sessionId = (document.getElementById('session-id').value || '').trim().toUpperCase();
+      // 1. JUMP INSTANTLY (Prediction)
+      p.flap();
 
+      // 2. TELL THE HOST (If you aren't the host)
+      if (!window.isHost) {
+        const sessionId = (document.getElementById('session-id').value || '').trim().toUpperCase();
         socket.emit('flap', {
           id: socket.id,
           sessionId

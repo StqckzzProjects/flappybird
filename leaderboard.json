@@ -22,6 +22,13 @@
   },
   {
     "name": "PLAYER 1",
+    "score": 58,
+    "mode": "classic",
+    "color": "#ffffff",
+    "time": 1778198607636
+  },
+  {
+    "name": "PLAYER 1",
     "score": 28,
     "mode": "classic",
     "color": "#00d2ff",
@@ -117,5 +124,12 @@
     "mode": "classic",
     "color": "#00d2ff",
     "time": 1778179945354
+  },
+  {
+    "name": "PLAYER 1",
+    "score": 4,
+    "mode": "classic",
+    "color": "#00d2ff",
+    "time": 1778198607633
   }
 ]
