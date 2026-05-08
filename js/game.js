@@ -189,7 +189,29 @@ if (players.length > 0 && players.every(p => p.isDead)) {
 
   return;
 }
+const scoreboard = document.getElementById('live-scoreboard');
 
+if (scoreboard) {
+
+  const sortedPlayers = [...players]
+    .sort((a, b) => (b.distance || 0) - (a.distance || 0));
+
+  scoreboard.innerHTML = sortedPlayers.map(p => `
+
+    <div class="live-score-entry"
+      style="
+        color:${p.color};
+        opacity:${p.isDead ? 0.5 : 1};
+      ">
+
+      ${p.isDead ? '☠ ' : ''}
+
+      ${p.name}: ${Math.floor((p.distance || 0) / 10)}m
+
+    </div>
+
+  `).join('');
+}
    window.currentGameLoop =
   requestAnimationFrame(gameEngine.loop);
   },
@@ -199,6 +221,11 @@ if (players.length > 0 && players.every(p => p.isDead)) {
 window.gameLoopRunning = false;
     canvas.style.display = 'none';
     document.getElementById('die-menu').style.display = 'flex';
+    const scoreboard = document.getElementById('live-scoreboard');
+
+if (scoreboard) {
+  scoreboard.innerHTML = '';
+}
   
     const currentModeKey = document.getElementById('game-mode').value;
   
